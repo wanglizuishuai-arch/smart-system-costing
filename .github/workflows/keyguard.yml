@@ -1,0 +1,28 @@
+﻿name: secret-scan
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # 全历史，才能扫到已删除文件里的密钥
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 全历史密钥扫描
+        run: |
+          python tools/gitsafe/keyguard_scan.py . --json scan.json
+      - name: 上传报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: secret-scan-report
+          path: scan.json
+          if-no-files-found: ignore

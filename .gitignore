@@ -1,0 +1,65 @@
+# ---- 密钥与凭据 ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+secrets.json
+credentials.json
+service-account*.json
+*-credentials.json
+
+# ---- 本地配置 ----
+.vscode/
+.idea/
+*.local
+config.local.*
+.DS_Store
+Thumbs.db
+
+# ---- 运行产物 ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+out.json
+validate.json
+*.log
+
+# ---- 业务数据（切勿提交真实项目资料）----
+# 本仓库只放方法、模板与脚本；具体项目的图纸、报价、客户资料一律不进仓库
+projects/
+clients/
+data/
+*.docx
+*.xlsx
+*.pptx
+*.pdf
+!templates/*.csv
+
+# ---- Office 临时文件 ----
+~$*
+*.tmp
+# --- gitsafe 追加 2026-11-11 ---
+*.keystore
+*.jks
+secrets.yml
+secrets.yaml
+.npmrc
+.pypirc
+.netrc
+id_rsa
+id_ed25519
+id_ecdsa
+*.swp
+node_modules/
+dist/
+build/
+*.pyc
+.venv/
+venv/
+env/
