@@ -146,6 +146,7 @@ python scripts/margin_model.py --params examples/margin.csv --json margin.json
 | `references/02-清单计价与取费.md` | S3 组价：GB/T 50500-2024 取费链、交叉校验、控制额、可选包、分层建设 |
 | `references/03-交付物与工程实现.md` | S4 出稿：docx/xlsx/pptx 结构、排版规范、COM 重算与导出、Windows 常见坑 |
 | `references/04-报价对账与毛利模型.md` | M4/M3：同口径归一、砍项映射、成本率表、毛利与净利测算 |
+| `references/05-单价基准与修正系数.md` | 需要基准单价、地区系数、年度指数时读 |
 | `templates/params.csv`、`templates/options.csv` | 参数与选配开关模板（含自测基线） |
 | `templates/internal-margin-memo.md` | **内部**成本与报价备忘录模板：毛利、三情景、底线、话术 |
 | `templates/docx_kit.py` | 排版内核：整表不跨页、表头重复、行不拆行（python-docx） |
@@ -153,6 +154,9 @@ python scripts/margin_model.py --params examples/margin.csv --json margin.json
 | `scripts/consistency_check.py` | 三件套金额一致 + 占位符残留 |
 | `scripts/capacity.py` | 容量推导四组公式 |
 | `scripts/margin_model.py` | 毛利/净利 + 三情景敏感度 |
+| `scripts/split_layers.py` | 清单按关键词拆投产必建/运营配套 |
+| `scripts/reconcile.py` | 两份报价同口径对账（归一、逐类差、Top3） |
+| `scripts/deliverable_qc.py` | 目录域/空页/表格跨页/PPT 越界体检 |
 | `examples/` | 可跑的脱敏样例（清单、参数、毛利） |
 
 ---
@@ -162,3 +166,4 @@ python scripts/margin_model.py --params examples/margin.csv --json margin.json
 - 写"投标应答表 / 偏离表 / 废标风险" → 用 `ai-bid-document` 类技能，本技能只管量与价；
 - 生成 PPT 视觉与动效 → 用 PPT 类技能，本技能只定义页序与每页要回答的问题；
 - 本技能与它们的关系：**先把量和价算平，再去写漂亮话**。反过来一定翻车。
+
