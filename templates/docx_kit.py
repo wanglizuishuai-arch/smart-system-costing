@@ -223,6 +223,13 @@ def table(spec):
     widths = [w * CONTENT_W / s for w in widths]
     fs = spec.get("fs", 9)
     aligns = spec.get("align") or ["l"] * len(headers)
+    # 让紧邻表格上方的段落（通常是引导句或小标题）与表格同页
+    try:
+        prev = DOC.paragraphs[-1] if DOC.paragraphs else None
+        if prev is not None and prev.text.strip():
+            prev.paragraph_format.keep_with_next = True
+    except Exception:
+        pass
     if spec.get("caption"):
         caption(spec["caption"], above=True)
     t = DOC.add_table(rows=1, cols=len(headers))
