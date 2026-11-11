@@ -1,0 +1,20 @@
+key,value
+# 设备 / 材料 / 软件 / 服务（万元，不含税）—— 换成自己项目的数
+eq,750.61
+mat,290.15
+sw,203.84
+sv,167.77
+# 费率（GB/T 50500-2024 口径）
+install_rate,0.14
+debug_rate,0.05
+manage_rate,0.03
+measure_rate,0.04
+other_rate,0.05
+tax_rate,0.09
+# 资金控制额（可空）
+control_main,2050
+# 分层建设（可空）：投产必建 / 运营配套的「直接费」
+layer_main_direct,1301.39
+layer_op_direct,110.98
+# 清单合计（用于反查加总，可空）
+direct_declared,1412.37

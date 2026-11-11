@@ -5,6 +5,7 @@
 用法：
     python costing_check.py --selftest
     python costing_check.py --params params.csv [--options options.csv] [--json out.json]
+    python costing_check.py --boq items.csv [--json out.json]      # 直接从清单汇总
 
 退出码：
     0  全部校验通过，可出文档
@@ -18,6 +19,9 @@ params.csv 字段（key,value，缺项取默认值）：
     layer_main_direct          投产必建直接费（可空）
     layer_op_direct            运营配套直接费（可空）
     direct_declared            清单合计（用于反查加总，可空）
+
+items.csv 字段（类型,金额）或（类别,项目,单位,数量,单价,类型）：
+    类型取 设备/材料/软件/服务；给了数量与单价时按 数量×单价 计算金额（万元）。
 
 options.csv 字段（code,name,direct,switch）：
     switch 为 0/1，用于复算已选合计
@@ -82,6 +86,47 @@ def num(p, k):
         return float(v)
     except (TypeError, ValueError):
         raise InputError("字段 %s 不是数字：%r" % (k, v))
+
+
+
+def load_boq(path):
+    """从清单 CSV 汇总四类金额（万元）。
+
+    支持两种列：
+      精简版：类型,金额
+      完整版：类别,项目,单位,数量,单价,类型
+    """
+    if not path:
+        return None
+    if not os.path.exists(path):
+        raise InputError("清单文件不存在：%s" % path)
+    bucket = {"设备": 0.0, "材料": 0.0, "软件": 0.0, "服务": 0.0}
+    unknown = []
+    with open(path, "r", encoding="utf-8-sig", newline="") as f:
+        rd = csv.DictReader(f)
+        cols = set(rd.fieldnames or [])
+        if "类型" not in cols:
+            raise InputError("清单需包含「类型」列")
+        full = {"数量", "单价"}.issubset(cols)
+        if not full and "金额" not in cols:
+            raise InputError("清单需包含「金额」列，或同时包含「数量」「单价」列")
+        for i, row in enumerate(rd, 2):
+            typ = (row.get("类型") or "").strip()
+            if typ not in bucket:
+                if typ:
+                    unknown.append("第%d行 类型=%r" % (i, typ))
+                continue
+            try:
+                if full:
+                    amt = float(row.get("数量") or 0) * float(row.get("单价") or 0) / 10000.0
+                else:
+                    amt = float(row.get("金额") or 0)
+            except ValueError:
+                raise InputError("第%d行 数量/单价/金额 不是数字" % i)
+            bucket[typ] += amt
+    if unknown:
+        raise InputError("类型只能是 设备/材料/软件/服务，问题行：%s" % "; ".join(unknown[:3]))
+    return bucket
 
 
 def compute(p):
@@ -174,16 +219,30 @@ def check(c, p, opts):
         ok = ctrl + 1e-9 >= c["total"]
         res.append(("控制额 ≥ 含税造价", ctrl, c["total"], ok))
 
-    # 8 分层合计 = 含税
+    # 8 分层合计 = 含税（逐层走完整取费链，不用综合系数近似）
     lm, lo = num(p, "layer_main_direct"), num(p, "layer_op_direct")
     if lm is not None and lo is not None:
         if abs((lm + lo) - c["direct"]) >= tol:
             res.append(("分层直接费合计 = 直接费", lm + lo, c["direct"], False))
         else:
-            # 按同一取费口径反算含税（两层的费用结构一致，用整体系数近似）
-            k = c["total"] / c["direct"] if c["direct"] else 0
-            res.append(("分层含税合计 = 含税造价（按综合系数近似）",
-                        round((lm + lo) * k, 2), round(c["total"], 2), True))
+            def layer_fee(d):
+                inst = d * mix_install * r_install
+                dbg = d * mix_debug * r_debug
+                mng = (d + inst + dbg) * r_manage
+                fb = d + inst + dbg + mng
+                return fb * (1 + r_measure + r_other) * (1 + r_tax)
+            mix_install = (c["base_install"] / c["direct"]) if c["direct"] else 0.0
+            mix_debug = (c["base_debug"] / c["direct"]) if c["direct"] else 0.0
+            r_install = c["rate"]["install_rate"]
+            r_debug = c["rate"]["debug_rate"]
+            r_manage = c["rate"]["manage_rate"]
+            r_measure = c["rate"]["measure_rate"]
+            r_other = c["rate"]["other_rate"]
+            r_tax = c["rate"]["tax_rate"]
+            lm_fee, lo_fee = layer_fee(lm), layer_fee(lo)
+            _sum = round(lm_fee + lo_fee, 2)
+            res.append(("分层含税合计 = 含税造价（逐层取费）",
+                        _sum, round(c["total"], 2), abs(_sum - c["total"]) < 0.05))
 
     # 9 选配合计
     if opts:
@@ -226,6 +285,7 @@ def render(c, res, bad):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--params", default="")
+    ap.add_argument("--boq", default="")
     ap.add_argument("--options", default="")
     ap.add_argument("--json", default="")
     ap.add_argument("--selftest", action="store_true")
@@ -235,6 +295,11 @@ def main():
         p = dict(DEFAULTS)
         p.update(SELFTEST if a.selftest else {})
         p.update(load_params(a.params) if a.params else {})
+        boq = load_boq(a.boq)
+        if boq:
+            p["eq"], p["mat"] = boq["设备"], boq["材料"]
+            p["sw"], p["sv"] = boq["软件"], boq["服务"]
+            p["direct_declared"] = round(sum(boq.values()), 2)
         c = compute(p)
         opts = load_options(a.options)
     except InputError as e:

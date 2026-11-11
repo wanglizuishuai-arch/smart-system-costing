@@ -1,4 +1,4 @@
----
+﻿---
 name: smart-system-costing
 description: 用于"从客户资料到可交付三件套"的智能化/弱电/农业设施类项目方案与投资估算。用户提到 智能化方案、弱电方案、智能化概算、投资估算、清单计价、清单取费、工程量清单、GB/T 50500、控制额、可选包、报价对账、毛利测算、方案汇报、要不要接这块、与传统弱电的区别 时使用。覆盖：规模口径冲突处理、系统清单与容量推导、清单计价取费链、交叉校验、可选项剥离、同口径报价对账、毛利模型、docx/xlsx/pptx 三件套交付与核验。
 version: 0.1.0
@@ -107,11 +107,22 @@ S5 交验      域更新/重算/导出/视觉抽查 + 交付说明（假设与�
 
 ---
 
-## 交付前的机器校验
+## 交付前的机器校验（四个脚本）
 
 ```bash
-python scripts/costing_check.py --params templates/params.csv --json out.json
+# 1. 取费链闭合（可直读清单 CSV）
+python scripts/costing_check.py --boq examples/items.csv --json out.json
 # exit 0 = 闭合可交付；exit 1 = 有阻断项；exit 2 = 输入有问题
+
+# 2. 三件套金额一致 + 占位符残留（交付前必跑）
+python scripts/consistency_check.py --docx 方案.docx --xlsx 概算.xlsx --pptx 汇报.pptx \
+    --expect 1982.85,1412.37,1109.57
+
+# 3. 容量推导（存储/带宽/UPS/光缆）
+python scripts/capacity.py --video "64,4,90;128,4,30" --bandwidth 350 --ups "3,1.5,4,6" --fiber 6
+
+# 4. 毛利与净利（内部用，别外发）
+python scripts/margin_model.py --params examples/margin.csv --json margin.json
 ```
 
 它检查六件事：分类合计 = 直接费、取费链逐级基数正确、含税 = 税前 + 税、分层合计 = 含税、选配合计 = 清单差额、控制额 ≥ 含税。详见脚本头部注释与 `references/02`。
@@ -135,8 +146,14 @@ python scripts/costing_check.py --params templates/params.csv --json out.json
 | `references/02-清单计价与取费.md` | S3 组价：GB/T 50500-2024 取费链、交叉校验、控制额、可选包、分层建设 |
 | `references/03-交付物与工程实现.md` | S4 出稿：docx/xlsx/pptx 结构、排版规范、COM 重算与导出、Windows 常见坑 |
 | `references/04-报价对账与毛利模型.md` | M4/M3：同口径归一、砍项映射、成本率表、毛利与净利测算 |
-| `templates/params.csv` | 项目参数模板（含自测基线，可直接改成新项目） |
-| `scripts/costing_check.py` | 校验脚本，纯标准库 |
+| `templates/params.csv`、`templates/options.csv` | 参数与选配开关模板（含自测基线） |
+| `templates/internal-margin-memo.md` | **内部**成本与报价备忘录模板：毛利、三情景、底线、话术 |
+| `templates/docx_kit.py` | 排版内核：整表不跨页、表头重复、行不拆行（python-docx） |
+| `scripts/costing_check.py` | 取费链复算 + 8 项校验（可直读清单 CSV） |
+| `scripts/consistency_check.py` | 三件套金额一致 + 占位符残留 |
+| `scripts/capacity.py` | 容量推导四组公式 |
+| `scripts/margin_model.py` | 毛利/净利 + 三情景敏感度 |
+| `examples/` | 可跑的脱敏样例（清单、参数、毛利） |
 
 ---
 

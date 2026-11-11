@@ -1,4 +1,4 @@
-# smart-system-costing
+﻿# smart-system-costing
 
 智能化 / 弱电 / 农业设施类项目的**方案与投资估算**技能：从客户资料到可交付三件套（DOCX + XLSX + PPTX），且三份金额必须咬合。
 
@@ -37,9 +37,18 @@ templates/
 # 1. 先跑通基线，确认环境正常
 python scripts/costing_check.py --selftest
 
-# 2. 换成自己项目
-python scripts/costing_check.py --params templates/params.csv \
-       --options templates/options.csv --json out.json
+# 2. 从清单直接汇总（推荐）
+python scripts/costing_check.py --boq examples/items.csv --json out.json
+
+# 3. 三件套交付前检查：金额一致 + 占位符清零
+python scripts/consistency_check.py --docx 方案.docx --xlsx 概算.xlsx --pptx 汇报.pptx \
+    --expect 1982.85,1412.37,1109.57
+
+# 4. 算量
+python scripts/capacity.py --video "64,4,90;128,4,30" --bandwidth 350 --ups "3,1.5,4,6" --fiber 6
+
+# 5. 毛利（内部用）
+python scripts/margin_model.py --params examples/margin.csv
 ```
 
 期望：`--selftest` 输出「含税造价 1982.84」且校验全绿、`exit 0`。
@@ -105,3 +114,4 @@ python tools/gitsafe/keyguard_scan.py .
 **误报率低比规则多更重要**——误报多了就会习惯性 `--no-verify`，钩子等于没装。
 
 > 本仓库只放方法、模板与脚本。真实项目的图纸、报价、客户资料一律不进仓库（见 `.gitignore`）。
+
