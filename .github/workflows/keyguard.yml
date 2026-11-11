@@ -1,4 +1,4 @@
-﻿name: secret-scan
+﻿name: keyguard
 
 on:
   push:
@@ -23,6 +23,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: secret-scan-report
+          name: keyguard-report
           path: scan.json
           if-no-files-found: ignore
